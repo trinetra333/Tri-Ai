@@ -51,7 +51,9 @@ static void ios_sd_log_cb(sd_log_level_t level, const char* text, void* data) {
     sd_ctx_params_init(&params);
     params.model_path = [path UTF8String];
     params.n_threads = sd_get_num_physical_cores();
-    params.free_params_immediately = false;  // Keep buffers alive between generations
+    // NOTE: `free_params_immediately` was removed from sd_ctx_params_t in
+    // newer stable-diffusion.cpp versions; buffer lifetime is now managed
+    // internally by the library.
 
     NSLog(@"[SD-iOS] Calling new_sd_ctx...");
     g_sd_ctx = new_sd_ctx(&params);
