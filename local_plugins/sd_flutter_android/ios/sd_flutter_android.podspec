@@ -82,6 +82,7 @@ Pod::Spec.new do |s|
     'OTHER_CFLAGS'                  => '$(inherited) -O3 -DNDEBUG -DGGML_USE_METAL=1 -DSD_USE_METAL=1 -DGGML_USE_CPU=1',
     'CLANG_CXX_LANGUAGE_STANDARD'  => 'c++17',
     'HEADER_SEARCH_PATHS'           => [
+      "#{sd_root}",
       "#{sd_root}/include",
       "#{sd_root}/ggml/include",
       "#{sd_root}/src",
