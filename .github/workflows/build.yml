@@ -1,4 +1,4 @@
-name: Build Tri Ai (Android / Web / iOS)
+name: Build Tri Ai (Android / iOS)
 
 on:
   push:
@@ -50,11 +50,11 @@ jobs:
         if: github.event_name != 'pull_request'
         run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/tri-ai.apk
 
-      - name: Publish / update "latest" release
+      - name: Publish / update "Tri AI v1.0.0 — Cross-Platform Local AI Assistant Release" release
         if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
+          tag_name: v1.0.1
           name: Tri Ai (latest build)
           body: Automatically built from the latest push to main. Always contains the newest APK.
           prerelease: true
