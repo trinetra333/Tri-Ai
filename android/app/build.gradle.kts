@@ -41,6 +41,12 @@ android {
             isShrinkResources = false
         }
     }
+
+    packaging {
+        jniLibs {
+            pickFirsts += setOf("**/libomp.so")
+        }
+    }
 }
 
 dependencies {
