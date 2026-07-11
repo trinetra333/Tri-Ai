@@ -49,6 +49,16 @@ class AppTheme {
         displayColor: textPrimary,
       ),
 
+      // ── Text selection ──
+      // Uses the gold brand accent so the highlight is always visibly
+      // distinct from body text and from the violet bubble background,
+      // instead of blending in like the default same-hue selection did.
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: AppColors.secondary,
+        selectionColor: AppColors.secondary.withValues(alpha: isDark ? 0.38 : 0.30),
+        selectionHandleColor: AppColors.secondary,
+      ),
+
       // ── AppBar ──
       appBarTheme: AppBarTheme(
         backgroundColor: bg,

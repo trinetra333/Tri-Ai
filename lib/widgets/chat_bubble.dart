@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/chat_message.dart';
@@ -29,7 +30,8 @@ class ChatBubble extends StatelessWidget {
         : splitThoughtTags(_cleanAssistantText(visibleContent));
     final answerContent = isUser ? visibleContent : thoughtParts.answer.trim();
 
-    return Padding(
+    return _BubbleEntrance(
+      child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       child: Align(
         alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -162,11 +164,19 @@ class ChatBubble extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
+                  if (visibleContent.trim().isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    _CopyButton(
+                      text: isUser ? visibleContent : answerContent,
+                      isUser: isUser,
+                    ),
+                  ],
                 ],
               ),
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -254,5 +264,102 @@ class ChatBubble extends StatelessWidget {
         .replaceAll('<|im_end|>', '')
         .replaceAll('<|end|>', '')
         .trim();
+  }
+}
+
+/// Small tappable copy icon with a brief "copied" checkmark animation and a
+/// press-scale micro-interaction.
+class _CopyButton extends StatefulWidget {
+  final String text;
+  final bool isUser;
+
+  const _CopyButton({required this.text, required this.isUser});
+
+  @override
+  State<_CopyButton> createState() => _CopyButtonState();
+}
+
+class _CopyButtonState extends State<_CopyButton> {
+  bool _copied = false;
+  bool _pressed = false;
+
+  Future<void> _handleCopy() async {
+    await Clipboard.setData(ClipboardData(text: widget.text));
+    if (!mounted) return;
+    setState(() => _copied = true);
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.isUser
+        ? Colors.white.withValues(alpha: 0.55)
+        : Theme.of(context).hintColor.withValues(alpha: 0.5);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTap: _handleCopy,
+      child: AnimatedScale(
+        scale: _pressed ? 0.8 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, anim) =>
+              ScaleTransition(scale: anim, child: child),
+          child: Icon(
+            _copied ? Icons.check_rounded : Icons.copy_rounded,
+            key: ValueKey(_copied),
+            size: 13,
+            color: _copied
+                ? (widget.isUser ? Colors.white : const Color(0xFF34C759))
+                : color,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fades and slides a chat bubble in as it's first built, giving new
+/// messages a subtle premium entrance instead of popping in instantly.
+class _BubbleEntrance extends StatefulWidget {
+  final Widget child;
+  const _BubbleEntrance({required this.child});
+
+  @override
+  State<_BubbleEntrance> createState() => _BubbleEntranceState();
+}
+
+class _BubbleEntranceState extends State<_BubbleEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  )..forward();
+  late final Animation<double> _fade =
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 0.06),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
   }
 }
