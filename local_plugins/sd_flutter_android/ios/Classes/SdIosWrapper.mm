@@ -82,7 +82,10 @@ static void ios_sd_log_cb(sd_log_level_t level, const char* text, void* data) {
     g_progress_block = self.onProgress;
     sd_set_progress_callback(ios_sd_progress_cb, NULL);
 
-    sd_image_t* result = generate_image(g_sd_ctx, &params);
+    sd_image_t* images_out = nullptr;
+    int num_images_out = 0;
+    bool gen_ok = generate_image(g_sd_ctx, &params, &images_out, &num_images_out);
+    sd_image_t* result = (gen_ok && images_out && num_images_out > 0) ? &images_out[0] : nullptr;
 
     g_progress_block = nil;
     sd_set_progress_callback(NULL, NULL);
@@ -92,8 +95,10 @@ static void ios_sd_log_cb(sd_log_level_t level, const char* text, void* data) {
     size_t size = result->width * result->height * result->channel;
     NSData *data = [NSData dataWithBytes:result->data length:size];
 
-    free(result->data);
-    free(result);
+    if (images_out) {
+        for (int i = 0; i < num_images_out; ++i) free(images_out[i].data);
+        free(images_out);
+    }
 
     return data;
 }
