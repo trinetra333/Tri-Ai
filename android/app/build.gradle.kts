@@ -34,11 +34,17 @@ android {
         multiDexEnabled = true
     }
 
-    buildTypes {
+ buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             isShrinkResources = false
+        }
+    }
+
+    packaging {
+        jniLibs {
+            pickFirsts += setOf("**/libomp.so")
         }
     }
 }
