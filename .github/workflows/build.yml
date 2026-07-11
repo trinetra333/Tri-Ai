@@ -61,33 +61,6 @@ jobs:
           make_latest: true
           files: build/app/outputs/flutter-apk/tri-ai.apk
 
-  build-web:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        # Web build doesn't compile the native Android/iOS plugin code,
-        # so the stable-diffusion.cpp submodule isn't needed here.
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build release web bundle
-        run: flutter build web --release
-
-      - name: Upload web build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tri-ai-web-build
-          path: build/web
-
   build-ios:
     runs-on: macos-latest
     # Unsigned compile-check build: verifies the app and native iOS plugin
