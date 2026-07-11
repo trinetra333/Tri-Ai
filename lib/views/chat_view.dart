@@ -30,6 +30,39 @@ Color _sep(BuildContext c) => Theme.of(c).brightness == Brightness.dark
     ? Colors.white.withValues(alpha: 0.08)
     : Colors.black.withValues(alpha: 0.08);
 
+/// Wraps the model-info row so it's tappable with a subtle press-scale,
+/// making "switch model" discoverable right from the top of the chat
+/// instead of requiring the user to find the Models tab on their own.
+class _ModelSwitchTap extends StatefulWidget {
+  final VoidCallback onTap;
+  final Widget child;
+  const _ModelSwitchTap({required this.onTap, required this.child});
+
+  @override
+  State<_ModelSwitchTap> createState() => _ModelSwitchTapState();
+}
+
+class _ModelSwitchTapState extends State<_ModelSwitchTap> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1.0,
+        alignment: Alignment.centerLeft,
+        duration: const Duration(milliseconds: 100),
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 class ChatView extends GetView<ChatController> {
   const ChatView({super.key});
 
@@ -147,35 +180,52 @@ class ChatView extends GetView<ChatController> {
                     color: isDark ? Colors.white : Colors.black),
                 overflow: TextOverflow.ellipsis),
             const SizedBox(height: 2),
-            Row(children: [
-              Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isLocal
-                          ? (inf.isModelLoaded.value
-                              ? const Color(0xFF34C759)
-                              : const Color(0xFFFF9500))
-                          : _appleBlue(context))),
-              const SizedBox(width: 5),
-              Flexible(
+            _ModelSwitchTap(
+              onTap: () => Get.find<HomeController>().changeTab(1),
+              child: Row(children: [
+                Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isLocal
+                            ? (inf.isModelLoaded.value
+                                ? const Color(0xFF34C759)
+                                : const Color(0xFFFF9500))
+                            : _appleBlue(context))),
+                const SizedBox(width: 5),
+                Flexible(
+                    child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                          position: Tween<Offset>(
+                                  begin: const Offset(0, 0.3), end: Offset.zero)
+                              .animate(anim),
+                          child: child)),
                   child: Text('$model · ${isLocal ? "Local" : "Cloud"}',
+                      key: ValueKey('$model-$isLocal'),
                       style: GoogleFonts.inter(
                           fontSize: 12,
                           color: Theme.of(context).hintColor,
                           fontWeight: FontWeight.w400),
-                      overflow: TextOverflow.ellipsis)),
-              if (isLocal && inf.isGpuAccelerated.value) ...[
-                const SizedBox(width: 4),
-                const Icon(Icons.bolt, size: 11, color: Color(0xFFFF9500)),
-                Text('GPU',
-                    style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: const Color(0xFFFF9500),
-                        fontWeight: FontWeight.w600)),
-              ],
-            ]),
+                      overflow: TextOverflow.ellipsis),
+                )),
+                if (isLocal && inf.isGpuAccelerated.value) ...[
+                  const SizedBox(width: 4),
+                  const Icon(Icons.bolt, size: 11, color: Color(0xFFFF9500)),
+                  Text('GPU',
+                      style: GoogleFonts.inter(
+                          fontSize: 10,
+                          color: const Color(0xFFFF9500),
+                          fontWeight: FontWeight.w600)),
+                ],
+                const SizedBox(width: 3),
+                Icon(Icons.unfold_more_rounded,
+                    size: 12, color: Theme.of(context).hintColor.withValues(alpha: 0.6)),
+              ]),
+            ),
           ]),
         );
       }),

@@ -13,6 +13,7 @@ class AiModel {
   final bool isVision;
   final bool isImported;
   final bool isCustom;
+  final bool isRecommended;
 
   AiModel({
     required this.name,
@@ -25,6 +26,7 @@ class AiModel {
     this.isVision = false,
     this.isImported = false,
     this.isCustom = false,
+    this.isRecommended = false,
   }) : runtime = runtime ?? runtimeFromFilename(filename, template: template);
 
   factory AiModel.fromMap(Map<String, String> map) => AiModel(
@@ -38,6 +40,7 @@ class AiModel {
         isVision: map['vision'] == 'true',
         isImported: map['imported'] == 'true',
         isCustom: map['custom'] == 'true',
+        isRecommended: map['recommended'] == 'true',
       );
 
   Map<String, String> toMap() => {
@@ -51,6 +54,7 @@ class AiModel {
         if (isVision) 'vision': 'true',
         if (isImported) 'imported': 'true',
         if (isCustom) 'custom': 'true',
+        if (isRecommended) 'recommended': 'true',
       };
 
   static String runtimeFromFilename(String filename, {String? template}) {

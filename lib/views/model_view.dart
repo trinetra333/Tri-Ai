@@ -11,6 +11,16 @@ import '../services/download_service.dart';
 import '../services/inference_service.dart';
 import '../services/local_image_service.dart';
 
+/// A single row in a grouped model list: either a brand section header or
+/// a selectable model id. Kept as a typed class (rather than a raw String)
+/// so the list builder never has to guess which kind a given string is.
+class _BrandListEntry {
+  final String value;
+  final bool isHeader;
+  const _BrandListEntry.header(this.value) : isHeader = true;
+  const _BrandListEntry.model(this.value) : isHeader = false;
+}
+
 class ModelView extends GetView<ModelController> {
   const ModelView({super.key});
 
@@ -63,6 +73,37 @@ class ModelView extends GetView<ModelController> {
                   _buildImportingProgress(context),
                   _buildLocalFilterChips(context),
                   const SizedBox(height: 12),
+                  Builder(builder: (context) {
+                    final recommended = controller.filteredDisplayedModels
+                        .where((m) => m.isRecommended)
+                        .toList();
+                    if (recommended.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [
+                            Icon(Icons.star_rounded,
+                                size: 14, color: AppColors.secondary),
+                            const SizedBox(width: 6),
+                            Text(
+                              'RECOMMENDED',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.secondary,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ]),
+                          const SizedBox(height: 12),
+                          ...recommended
+                              .map((model) => _buildModelCard(context, model)),
+                        ],
+                      ),
+                    );
+                  }),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -1590,6 +1631,48 @@ class ModelView extends GetView<ModelController> {
               );
             } else if (models.isEmpty) {
               modelList = _buildModelSelectEmptyState(context, provider);
+            } else if (provider.id == 'openrouter' &&
+                !freeFirst &&
+                (cloud.searchByProvider[provider.id] ?? '').trim().isEmpty) {
+              // Group the aggregated OpenRouter catalogue by underlying
+              // brand (openai/, anthropic/, google/, ...) so it isn't one
+              // giant mixed list. Skipped while actively searching or
+              // free-first sorting, since grouping would fight those orders.
+              final grouped = <String, List<String>>{};
+              for (final id in models) {
+                final slug = _brandSlugFor(provider.id, id) ?? 'other';
+                grouped.putIfAbsent(slug, () => []).add(id);
+              }
+              final brandSlugs = grouped.keys.toList()
+                ..sort((a, b) =>
+                    _brandDisplayName(a).compareTo(_brandDisplayName(b)));
+              final flatItems = <_BrandListEntry>[];
+              for (final slug in brandSlugs) {
+                flatItems.add(_BrandListEntry.header(_brandDisplayName(slug)));
+                for (final id in grouped[slug]!) {
+                  flatItems.add(_BrandListEntry.model(id));
+                }
+              }
+              modelList = ListView.builder(
+                itemCount: flatItems.length,
+                itemBuilder: (context, index) {
+                  final item = flatItems[index];
+                  if (item.isHeader) {
+                    return _buildBrandHeader(context, item.value);
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _buildCloudModelRow(
+                      context,
+                      cloud,
+                      provider,
+                      item.value,
+                      activeModel,
+                      isActiveProvider,
+                    ),
+                  );
+                },
+              );
             } else {
               modelList = ListView.separated(
                 itemCount: models.length,
@@ -1813,7 +1896,10 @@ class ModelView extends GetView<ModelController> {
         providerId == 'google' ? id.replaceFirst('models/', '') : id;
     final canUse = cloud.canSelectModel(providerId);
     final isActive = isActiveProvider && normalized == activeModel && canUse;
-    final tags = cloud.modelTagsFor(providerId, id);
+    final rawTags = cloud.modelTagsFor(providerId, id);
+    final tags = (providerId == 'openrouter' && !rawTags.contains('FREE'))
+        ? [...rawTags, 'PAID']
+        : rawTags;
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1886,7 +1972,12 @@ class ModelView extends GetView<ModelController> {
 
   Widget _buildModelTag(BuildContext context, String label) {
     final isFree = label == 'FREE';
-    final color = isFree ? AppColors.success : AppColors.info;
+    final isPaid = label == 'PAID';
+    final color = isFree
+        ? AppColors.success
+        : isPaid
+            ? AppColors.secondary
+            : AppColors.info;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
@@ -1901,6 +1992,63 @@ class ModelView extends GetView<ModelController> {
           color: color,
         ),
       ),
+    );
+  }
+
+  /// Extracts the vendor prefix from an OpenRouter-style model id
+  /// ("openai/gpt-4o" -> "openai"), or null if the id has no vendor prefix.
+  String? _brandSlugFor(String providerId, String modelId) {
+    if (providerId != 'openrouter') return null;
+    final slash = modelId.indexOf('/');
+    if (slash <= 0) return null;
+    return modelId.substring(0, slash);
+  }
+
+  static const Map<String, String> _brandDisplayNames = {
+    'openai': 'OpenAI',
+    'anthropic': 'Anthropic',
+    'google': 'Google',
+    'meta-llama': 'Meta',
+    'mistralai': 'Mistral',
+    'x-ai': 'xAI',
+    'deepseek': 'DeepSeek',
+    'qwen': 'Qwen',
+    'microsoft': 'Microsoft',
+    'nvidia': 'NVIDIA',
+    'cohere': 'Cohere',
+    'perplexity': 'Perplexity',
+    'amazon': 'Amazon',
+  };
+
+  String _brandDisplayName(String slug) {
+    if (_brandDisplayNames.containsKey(slug)) return _brandDisplayNames[slug]!;
+    return slug
+        .split(RegExp(r'[-_]'))
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
+  }
+
+  Widget _buildBrandHeader(BuildContext context, String brandLabel) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14, bottom: 2, left: 2),
+      child: Row(children: [
+        Text(
+          brandLabel.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+            color: Theme.of(context).hintColor,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Divider(
+              height: 1,
+              color: Theme.of(context).hintColor.withValues(alpha: 0.2)),
+        ),
+      ]),
     );
   }
 
@@ -1979,6 +2127,9 @@ class ModelView extends GetView<ModelController> {
 
   Widget _buildModelBadges(BuildContext context, AiModel model) {
     final badges = <({String label, Color color})>[];
+    if (model.isRecommended) {
+      badges.add((label: '★ RECOMMENDED', color: AppColors.secondary));
+    }
     if (controller.isDownloaded(model.filename)) {
       badges.add((label: 'DOWNLOADED', color: AppColors.success));
     }

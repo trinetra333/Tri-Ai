@@ -10,6 +10,8 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repo
@@ -43,3 +45,18 @@ jobs:
         with:
           name: tri-ai-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Rename APK for release
+        if: github.event_name != 'pull_request'
+        run: cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/tri-ai.apk
+
+      - name: Publish / update "latest" release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Tri Ai (latest build)
+          body: Automatically built from the latest push to main. Always contains the newest APK.
+          prerelease: true
+          make_latest: true
+          files: build/app/outputs/flutter-apk/tri-ai.apk

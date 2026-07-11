@@ -200,6 +200,7 @@ class AppConstants {
       'size': '1.6 GB',
       'description': '🔓 Abliterated — Permanently uncensored, very smart',
       'template': 'gemma',
+      'recommended': 'true',
     },
     {
       'name': 'SmolLM2-1.7B-Uncensored (Q4_K_M)',
