@@ -9,7 +9,8 @@ import '../services/inference_service.dart';
 import '../services/hive_service.dart';
 import '../services/local_image_service.dart';
 import '../services/device_info_service.dart';
-import '../services/device_info_native.dart' as platform_info;
+import '../services/device_info_native.dart'
+    if (dart.library.html) '../services/device_info_web.dart' as platform_info;
 import '../ffi/sd_ffi_bindings.dart';
 import 'log_view.dart';
 
@@ -111,39 +112,6 @@ class SettingsView extends GetView<SettingsController> {
                       : null,
                   showDivider: false,
                   onTap: () => controller.setInferenceMode('cloud'),
-                ),
-              ]),
-              const SizedBox(height: 24),
-              _sectionLabel(context, 'SYSTEM PROMPT'),
-              _appleGroupedCard(context, isDark, children: [
-                Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Applies to local and cloud models',
-                            style: GoogleFonts.inter(
-                                fontSize: 13,
-                                color: Theme.of(context).hintColor)),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: controller.globalSystemPromptController,
-                          minLines: 3,
-                          maxLines: 6,
-                          style: GoogleFonts.inter(fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: AppConstants.systemPrompt,
-                            suffixIcon: IconButton(
-                                icon: const Icon(Icons.check_circle_outline,
-                                    size: 20),
-                                onPressed: () =>
-                                    controller.setGlobalSystemPrompt(controller
-                                        .globalSystemPromptController.text)),
-                          ),
-                          onSubmitted: (v) =>
-                              controller.setGlobalSystemPrompt(v),
-                        ),
-                      ]),
                 ),
               ]),
               const SizedBox(height: 24),

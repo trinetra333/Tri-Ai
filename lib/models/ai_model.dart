@@ -14,6 +14,7 @@ class AiModel {
   final bool isImported;
   final bool isCustom;
   final bool isRecommended;
+  final int recommendedPriority;
 
   AiModel({
     required this.name,
@@ -27,6 +28,7 @@ class AiModel {
     this.isImported = false,
     this.isCustom = false,
     this.isRecommended = false,
+    this.recommendedPriority = 999,
   }) : runtime = runtime ?? runtimeFromFilename(filename, template: template);
 
   factory AiModel.fromMap(Map<String, String> map) => AiModel(
@@ -41,6 +43,7 @@ class AiModel {
         isImported: map['imported'] == 'true',
         isCustom: map['custom'] == 'true',
         isRecommended: map['recommended'] == 'true',
+        recommendedPriority: int.tryParse(map['recommendedPriority'] ?? '') ?? 999,
       );
 
   Map<String, String> toMap() => {
@@ -55,6 +58,8 @@ class AiModel {
         if (isImported) 'imported': 'true',
         if (isCustom) 'custom': 'true',
         if (isRecommended) 'recommended': 'true',
+        if (recommendedPriority != 999)
+          'recommendedPriority': recommendedPriority.toString(),
       };
 
   static String runtimeFromFilename(String filename, {String? template}) {

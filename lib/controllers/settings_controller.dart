@@ -489,9 +489,8 @@ class SettingsController extends GetxController {
     final hasCustomPrompt =
         prompt.isNotEmpty && prompt != AppConstants.systemPrompt;
     if (hasCustomPrompt) return prompt;
-    if (AppConstants.isUncensoredModelName(modelName)) {
-      return AppConstants.uncensoredSystemPrompt;
-    }
+    // Tri AI's sarcastic persona applies universally now — no more
+    // switching to a separate "uncensored" prompt based on model name.
     return AppConstants.systemPrompt;
   }
 

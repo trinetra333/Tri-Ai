@@ -76,7 +76,9 @@ class ModelView extends GetView<ModelController> {
                   Builder(builder: (context) {
                     final recommended = controller.filteredDisplayedModels
                         .where((m) => m.isRecommended)
-                        .toList();
+                        .toList()
+                      ..sort((a, b) =>
+                          a.recommendedPriority.compareTo(b.recommendedPriority));
                     if (recommended.isEmpty) return const SizedBox.shrink();
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 18),

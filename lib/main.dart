@@ -170,6 +170,9 @@ void _validateLastModel() async {
 }
 
 /// Auto-set optimized inference params based on device RAM (only on first launch).
+/// Uses the device's *maximum safe* context/token ceiling rather than the more
+/// conservative "recommended" middle-ground, so Tri Ai runs at the highest
+/// performance each device can safely handle by default.
 void _autoConfigureForDevice() {
   final hive = Get.find<HiveService>();
   final device = Get.find<DeviceInfoService>();
@@ -179,14 +182,14 @@ void _autoConfigureForDevice() {
       hive.getSetting<bool>('device_auto_configured') ?? false;
   if (hasConfigured) return;
 
-  hive.setSetting(AppConstants.keyContextSize, device.recommendedContextSize);
-  hive.setSetting(AppConstants.keyMaxTokens, device.recommendedMaxTokens);
+  hive.setSetting(AppConstants.keyContextSize, device.maxSafeContextSize);
+  hive.setSetting(AppConstants.keyMaxTokens, device.maxSafeTokens);
   hive.setSetting(AppConstants.keyTemperature, 0.3);
   hive.setSetting('device_auto_configured', true);
 
   Get.find<AppLogService>().info(
-      '[AutoConfig] Set context=${device.recommendedContextSize}, '
-      'maxTokens=${device.recommendedMaxTokens} for ${device.totalRamGB.value.toStringAsFixed(1)}GB RAM');
+      '[AutoConfig] Max performance: context=${device.maxSafeContextSize}, '
+      'maxTokens=${device.maxSafeTokens} for ${device.totalRamGB.value.toStringAsFixed(1)}GB RAM');
 }
 
 class TriAiApp extends StatelessWidget {
