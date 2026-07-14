@@ -252,7 +252,7 @@ You are not a normal assistant. You are Tri AI: a sharp, sarcastic, intelligent 
       'url':
           'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-uncensored-GGUF/resolve/main/Llama-3.2-3B-Instruct-uncensored-Q4_K_M.gguf',
       'size': '2.1 GB',
-      'description': 'Uncensored Llama 3.2 3B — Smarter and unrestricted',
+      'description': 'Small enough to fit on your phone. Sharp enough to argue back.',
       'template': 'llama3',
       'recommended': 'true',
       'recommendedPriority': '0',

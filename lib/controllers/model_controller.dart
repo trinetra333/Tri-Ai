@@ -110,7 +110,23 @@ class ModelController extends GetxController {
 
   int get downloadedCount => downloadedFiles.length;
 
-  String get activeLocalModelName => _inference.loadedModelName.value;
+  /// Maps a raw model filename to its catalog display name (e.g.
+  /// "Tri-6.9-36b O_o" instead of the underlying
+  /// "llama-3.2-3b-instruct-uncensored-q4_k_m.gguf"). Falls back to a
+  /// cleaned-up filename for imported/custom models with no catalog entry,
+  /// so the rebranded name is used consistently everywhere the active
+  /// model is shown, instead of leaking the raw filename.
+  String displayNameForFilename(String filename) {
+    if (filename.isEmpty) return filename;
+    final match = availableModels.firstWhereOrNull(
+      (m) => m.filename == filename,
+    );
+    if (match != null) return match.name;
+    return filename.replaceAll('.gguf', '').replaceAll('.GGUF', '');
+  }
+
+  String get activeLocalModelName =>
+      displayNameForFilename(_inference.loadedModelName.value);
 
   @override
   void onInit() {

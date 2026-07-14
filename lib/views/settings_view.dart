@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/settings_controller.dart';
+import '../controllers/model_controller.dart';
 import '../core/colors.dart';
 import '../core/constants.dart';
 import '../services/inference_service.dart';
@@ -248,10 +249,11 @@ class SettingsView extends GetView<SettingsController> {
   String _localSubtitle() {
     final inf = Get.find<InferenceService>();
     final localImage = Get.find<LocalImageService>();
+    final modelCtrl = Get.find<ModelController>();
     if (inf.isModelLoaded.value) {
-      return 'Active: ${inf.loadedModelName.value}';
+      return 'Active: ${modelCtrl.displayNameForFilename(inf.loadedModelName.value)}';
     } else if (localImage.isModelLoaded.value) {
-      return 'Active: ${localImage.loadedModelName.value}';
+      return 'Active: ${modelCtrl.displayNameForFilename(localImage.loadedModelName.value)}';
     }
     return 'No model loaded';
   }

@@ -130,17 +130,15 @@ class ChatView extends GetView<ChatController> {
         String model;
         if (isLocal) {
           final localImage = Get.find<LocalImageService>();
+          final modelCtrl = Get.find<ModelController>();
           if (inf.isModelLoaded.value) {
-            model = inf.loadedModelName.value
-                .replaceAll('.gguf', '')
-                .replaceAll('.GGUF', '');
+            model = modelCtrl.displayNameForFilename(inf.loadedModelName.value);
           } else if (localImage.isModelLoaded.value) {
             final backend = localImage.currentBackend.value;
             final backendEmoji = backend == Backend.cpu ? '🖥' : '⚡';
             final backendName = backend.displayName.split(' ').first;
-            model = '$backendEmoji $backendName · ${localImage.loadedModelName.value
-                .replaceAll('.gguf', '')
-                .replaceAll('.GGUF', '')}';
+            model =
+                '$backendEmoji $backendName · ${modelCtrl.displayNameForFilename(localImage.loadedModelName.value)}';
           } else {
             model = 'No model loaded';
           }
