@@ -31,6 +31,12 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force || true
+          df -h
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -38,7 +44,9 @@ jobs:
         run: flutter analyze || true
 
       - name: Build release APK
-        run: flutter build apk --release
+        # --target-platform pins the build to a single ABI as a safety net —
+        # native builds for all 4 ABIs previously exhausted CI disk space.
+        run: flutter build apk --release --target-platform android-arm64
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
