@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../core/constants.dart';
+import 'model_controller.dart';
 import '../services/app_log_service.dart';
 import '../services/hive_service.dart';
 import '../services/inference_service.dart';
@@ -77,8 +78,11 @@ class ServerController extends GetxController {
       inference.isModelLoaded.value &&
       inference.loadedModelRuntime.value == 'litert';
 
-  String get modelName =>
-      inference.loadedModelName.value.isEmpty ? 'No model loaded' : inference.loadedModelName.value;
+  String get modelName {
+    final filename = inference.loadedModelName.value;
+    if (filename.isEmpty) return 'No model loaded';
+    return Get.find<ModelController>().displayNameForFilename(filename);
+  }
 
   Future<void> toggleServer(bool enabled) async {
     if (enabled) {

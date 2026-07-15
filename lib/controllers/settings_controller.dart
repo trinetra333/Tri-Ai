@@ -489,8 +489,14 @@ class SettingsController extends GetxController {
     final hasCustomPrompt =
         prompt.isNotEmpty && prompt != AppConstants.systemPrompt;
     if (hasCustomPrompt) return prompt;
-    // Tri AI's sarcastic persona applies universally now — no more
-    // switching to a separate "uncensored" prompt based on model name.
+    // Tri AI's sarcastic persona applies to every model. Uncensored/
+    // abliterated fine-tunes additionally get an addendum overriding their
+    // residual refusal training — without it, they tend to fall back to
+    // moralizing/refusing despite the fine-tune, since the base persona
+    // alone doesn't explicitly countermand that trained behavior.
+    if (AppConstants.isUncensoredModelName(modelName)) {
+      return '${AppConstants.systemPrompt}\n\n${AppConstants.uncensoredSystemPrompt}';
+    }
     return AppConstants.systemPrompt;
   }
 

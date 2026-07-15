@@ -5,6 +5,7 @@ import '../services/inference_service.dart';
 import '../services/local_image_service.dart';
 import '../services/download_service.dart';
 import '../core/constants.dart';
+import 'model_controller.dart';
 
 class HomeController extends GetxController {
   final currentTab = 0.obs;
@@ -45,10 +46,16 @@ class HomeController extends GetxController {
     if (!hasText && !hasImage) return;
     if (!context.mounted) return;
 
+    final modelCtrl = Get.find<ModelController>();
+    final textDisplayName =
+        hasText ? modelCtrl.displayNameForFilename(textName!) : '';
+    final imageDisplayName =
+        hasImage ? modelCtrl.displayNameForFilename(imageName!) : '';
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final label = hasText && hasImage
-        ? '$textName & $imageName'
-        : (hasText ? textName : imageName);
+        ? '$textDisplayName & $imageDisplayName'
+        : (hasText ? textDisplayName : imageDisplayName);
 
     showDialog(
       context: context,

@@ -555,7 +555,9 @@ class OpenAiServerService {
         modelName,
       );
     }
-    // Tri AI's sarcastic persona applies universally now.
+    if (AppConstants.isUncensoredModelName(modelName)) {
+      return '${AppConstants.systemPrompt}\n\n${AppConstants.uncensoredSystemPrompt}';
+    }
     return AppConstants.systemPrompt;
   }
 }

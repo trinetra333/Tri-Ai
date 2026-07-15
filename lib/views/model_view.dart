@@ -74,37 +74,6 @@ class ModelView extends GetView<ModelController> {
                   _buildLocalFilterChips(context),
                   const SizedBox(height: 12),
                   Builder(builder: (context) {
-                    final downloaded = controller.filteredDisplayedModels
-                        .where((m) => controller.isDownloaded(m.filename))
-                        .toList();
-                    if (downloaded.isEmpty) return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(children: [
-                            Icon(Icons.download_done_rounded,
-                                size: 14, color: AppColors.success),
-                            const SizedBox(width: 6),
-                            Text(
-                              'DOWNLOADED',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.success,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                          ]),
-                          const SizedBox(height: 12),
-                          ...downloaded
-                              .map((model) => _buildModelCard(context, model)),
-                        ],
-                      ),
-                    );
-                  }),
-                  Builder(builder: (context) {
                     final recommended = controller.filteredDisplayedModels
                         .where((m) => m.isRecommended)
                         .toList()
