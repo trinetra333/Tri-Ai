@@ -173,23 +173,33 @@ void _validateLastModel() async {
 /// Uses the device's *maximum safe* context/token ceiling rather than the more
 /// conservative "recommended" middle-ground, so Tri Ai runs at the highest
 /// performance each device can safely handle by default.
+/// Auto-set optimized inference params based on device RAM (only on first
+/// launch, or once more for anyone who got the old v1 config).
+///
+/// Uses the device's "recommended" context/token size rather than the
+/// higher "max safe" ceiling — larger context directly slows down every
+/// token generated (more KV-cache to attend to each step), so maximizing
+/// capacity here was actually the wrong lever for response speed.
 void _autoConfigureForDevice() {
   final hive = Get.find<HiveService>();
   final device = Get.find<DeviceInfoService>();
 
-  // Only auto-configure if user hasn't already set values (first launch)
+  // v2: corrects a v1 mistake that used maxSafe* (capacity-maximizing but
+  // slower) instead of recommended* (speed-appropriate) values. Runs once
+  // more even for devices that already got v1, then never again.
   final hasConfigured =
-      hive.getSetting<bool>('device_auto_configured') ?? false;
+      hive.getSetting<bool>('device_auto_configured_v2') ?? false;
   if (hasConfigured) return;
 
-  hive.setSetting(AppConstants.keyContextSize, device.maxSafeContextSize);
-  hive.setSetting(AppConstants.keyMaxTokens, device.maxSafeTokens);
+  hive.setSetting(AppConstants.keyContextSize, device.recommendedContextSize);
+  hive.setSetting(AppConstants.keyMaxTokens, device.recommendedMaxTokens);
   hive.setSetting(AppConstants.keyTemperature, 0.3);
   hive.setSetting('device_auto_configured', true);
+  hive.setSetting('device_auto_configured_v2', true);
 
   Get.find<AppLogService>().info(
-      '[AutoConfig] Max performance: context=${device.maxSafeContextSize}, '
-      'maxTokens=${device.maxSafeTokens} for ${device.totalRamGB.value.toStringAsFixed(1)}GB RAM');
+      '[AutoConfig] Speed-tuned: context=${device.recommendedContextSize}, '
+      'maxTokens=${device.recommendedMaxTokens} for ${device.totalRamGB.value.toStringAsFixed(1)}GB RAM');
 }
 
 class TriAiApp extends StatelessWidget {
